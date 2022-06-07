@@ -1,12 +1,16 @@
 import re
 import sys
-import log_config
-from inventory import Inventory
 import paramiko
 from pykeepass import PyKeePass
-import interactive
 
-logger = log_config.get_logger(__name__)
+from .interactive import interactive_shell
+from .inventory import Inventory
+from .log_config import get_logger
+from .common import get_local_terminal_size, get_local_terminal_type
+
+import os
+
+logger = get_logger(__name__)
 
 _re_raw_ssh = re.compile(r'([\d\w\.\-_]+)@([\d\w\.\-_]+)')
 # _re_inventory_ssh = re.compile(r'((([\w\d\.\-_]+)/?)+)')
@@ -41,14 +45,18 @@ class SSHConnection():
         inventory = Inventory('../inventory.yaml')
         item_path = self.target.split('/')
         logger.debug(item_path)
-        logger.debug(self.target.split('@'))
-        logger.debug(inventory.inventory_dict)
+        # logger.debug(self.target.split('@'))
+        # logger.debug(inventory.inventory_dict)
         config = inventory.inventory_dict[item_path[0]]
         if len(item_path) > 1:
             for item in item_path[1:]:
                 logger.debug(item)
                 logger.debug(config)
                 config = config[item]
+
+        # temporary workaround
+        if 'key_filename' in config.keys():
+            config.pop('key_filename')
         
         # paramiko.SSHClient()
         # hostname,
@@ -76,7 +84,7 @@ class SSHConnection():
 
     def __get_credentials(self):
         try:
-            pwd_db = PyKeePass('../pwd_db.kdbx', password='Zcjr_Btk_r8wLN)iQ{0cy')
+            pwd_db = PyKeePass('../pwd_db.kdbx', keyfile='pwddb.keyx')
         except FileNotFoundError as e:
             logger.error(e)
             # logger.exception(e)
@@ -97,15 +105,29 @@ class SSHConnection():
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy)
         # logger.info('connecting to '+self.config['hostname'])
         logger.info('connecting to '+self.config['hostname'])
+        # TODO: deal with BadHostKeyException
+        # better to check it in advance even
+        # client.load_system_host_keys
+        # paramiko.HostKeys
         client.connect(**self.config)
 
         t = client.get_transport()
         channel = t.open_session()
 
-        channel.get_pty()
-        channel.invoke_shell()
+        # local_terminal_size = os.get_terminal_size()
+        # local_terminal_type = os.getenv('TERM')
 
-        interactive.interactive_shell(channel)
+        try:
+            channel.get_pty(
+                get_local_terminal_type(),
+                *get_local_terminal_size()
+            )
+            channel.invoke_shell()
+        except Exception as err:
+            logger.error(str(err))
+            sys.exit(1)
+
+        interactive_shell(channel)
 
         # print(channel.getpeername())
         # print(channel.active)
