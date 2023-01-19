@@ -4,16 +4,19 @@ from .common import singlton_class, flatten_log_msg
 
 from yaml import load as yaml_load
 
-from .common import flatten_log_msg
-from .inventory import Inventory
+# from .inventory import Inventory
 from .log_config import get_logger
 
 try:
-    from yaml import CLoader as Loader, CDumper as Dumper
+    # from yaml import CLoader as Loader, CDumper as Dumper
+    from yaml import CLoader as Loader
 except ImportError:
-    from yaml import Loader, Dumper
+    # from yaml import Loader, Dumper
+    from yaml import Loader
 
 console_logger = get_logger('console_logger')
+
+
 @singlton_class
 class Config():
 
@@ -51,7 +54,6 @@ class Config():
                     'File {} not found. Exiting'.format(fname)
                 )
                 sys.exit(1)
-
 
     # @property
     # def inventory(self):

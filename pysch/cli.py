@@ -4,7 +4,7 @@ from typing import List
 
 import paramiko
 from pykeepass import PyKeePass
-from pykeepass.exceptions import CredentialsError
+# from pykeepass.exceptions import CredentialsError
 
 from .config import Config
 from .inventory import Inventory
@@ -21,23 +21,26 @@ DEFAULT_CONFIG_FILE = 'config.yaml'
 
 #     def __init__(self) -> None:
 #         pass
-    
 #     def run(self):
 #         pass
+
 
 class PyscCLI():
 
     def __init__(self, config_file=DEFAULT_CONFIG_FILE) -> None:
         self.config = Config(config_file)
-        
+
         try:
             self._inventory = Inventory(self.config.inventory_file)
-        except AttributeError as e:
+        except AttributeError:
             console_logger.error('No inventory file provided!')
             sys.exit(1)
-        
+
         try:
-            self.pwddb = PyKeePass(self.config.keepass_db_file, keyfile=self.config.keepass_key_file)
+            self.pwddb = PyKeePass(
+                self.config.keepass_db_file,
+                keyfile=self.config.keepass_key_file
+            )
         except FileNotFoundError as e:
             console_logger.error(str(e))
             # logger.exception(e)
@@ -70,8 +73,11 @@ class PyscCLI():
                 for item in item_path[1:]:
                     connection_config = connection_config[item]
 
-        if 'credentials' in connection_config.keys():            
-            credentials = self.pwddb.find_entries_by_title(connection_config['credentials'], first=True)
+        if 'credentials' in connection_config.keys():
+            credentials = self.pwddb.find_entries_by_title(
+                connection_config['credentials'],
+                first=True
+            )
             try:
                 connection_config['username'] = credentials.username
                 connection_config['password'] = credentials.password

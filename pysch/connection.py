@@ -8,12 +8,11 @@ from .inventory import Inventory
 from .log_config import get_logger
 from .common import get_local_terminal_size, get_local_terminal_type
 
-import os
-
 logger = get_logger(__name__)
 
 _re_raw_ssh = re.compile(r'([\d\w\.\-_]+)@([\d\w\.\-_]+)')
 # _re_inventory_ssh = re.compile(r'((([\w\d\.\-_]+)/?)+)')
+
 
 class ConnectionConfig():
 
@@ -21,6 +20,7 @@ class ConnectionConfig():
         self.username = username
         self.hostname = hostname
         pass
+
 
 class SSHConnection():
 
@@ -37,7 +37,9 @@ class SSHConnection():
     #     raw_match = _re_raw_ssh.match(self.target)
     #     logger.error(raw_match)
     #     if raw_match:
-    #         self.config = ConnectionConfig(username=raw_match.group(1), hostname=raw_match.group(2))
+    #         self.config = ConnectionConfig(
+    #           username=raw_match.group(1),
+    #           hostname=raw_match.group(2))
     #         logger.error(self.config)
     #     pass
 
@@ -57,7 +59,7 @@ class SSHConnection():
         # temporary workaround
         if 'key_filename' in config.keys():
             config.pop('key_filename')
-        
+
         # paramiko.SSHClient()
         # hostname,
         # port=SSH_PORT,
@@ -89,8 +91,11 @@ class SSHConnection():
             logger.error(e)
             # logger.exception(e)
             sys.exit(1)
-        
-        credentials = pwd_db.find_entries_by_title(self.config['credentials'], first=True)
+
+        credentials = pwd_db.find_entries_by_title(
+            self.config['credentials'],
+            first=True
+        )
         logger.debug(credentials)
         try:
             self.config['username'] = credentials.username
@@ -131,9 +136,6 @@ class SSHConnection():
 
         # print(channel.getpeername())
         # print(channel.active)
-
-
-        
 
 # if __name__ == '__main__':
 #     t480 = SSHConnection('t480')

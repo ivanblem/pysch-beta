@@ -2,7 +2,6 @@ import sys
 import os
 from typing import List
 from .log_config import get_logger
-import logging
 from .common import flatten_log_msg
 
 from yaml import load as yaml_load
@@ -13,6 +12,7 @@ except ImportError:
 
 logger = get_logger(__name__)
 console_logger = get_logger('console_logger')
+
 
 class Inventory():
 
@@ -40,6 +40,7 @@ class Inventory():
 
     def _flatten(self) -> List:
         flattened_dict = []
+
         def do_flat(d, prefix=''):
             new_prefix = prefix
             for k in d:
@@ -50,24 +51,9 @@ class Inventory():
                     do_flat(d[k], prefix=new_prefix)
                     new_prefix = prefix
             return flattened_dict
+
         return do_flat(self.inventory_dict)
 
     @property
     def flat(self):
         return self._flat
-        
-        
-
-# if __name__ == '__main__':
-#     # inv = Inventory('/Users/ivanb/dev/pyssh/inventory.yaml')
-#     inv = Inventory('../inventory.yaml')
-    # print(inv.groups)
-
-#     from pprint import PrettyPrinter
-#     pp = PrettyPrinter(indent=4)
-#     pp.pprint(inv.inventory_dict)
-
-#     pp.pprint(inv.inventory_dict['nas'])
-
-#     pp.pprint(inv.groups)
-#     pp.pprint(inv.hosts)

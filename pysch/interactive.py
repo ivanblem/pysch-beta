@@ -65,26 +65,9 @@ def posix_shell(chan):
                     # x = u(chan.recv(1024))
                     try:
                         x = u(chan.recv(1024))
-                    except UnicodeDecodeError as e:
-                        logger.debug(flatten_log_msg(e))
-                    # A:i80dcgw1# Traceback (most recent call last):
-                    # File "/home/ivan/dev/pysc/pysc/./pysc.py", line 12, in <module>
-                    #     main()
-                    # File "/home/ivan/dev/pysc/pysc/./pysc.py", line 9, in main
-                    #     commands.connect(sys.argv[2])
-                    # File "/home/ivan/dev/pysc/pysc/commands.py", line 4, in connect
-                    #     SSHConnection(target_host).connect()
-                    # File "/home/ivan/dev/pysc/pysc/connection.py", line 127, in connect
-                    #     interactive.interactive_shell(channel)
-                    # File "/home/ivan/dev/pysc/pysc/interactive.py", line 46, in interactive_shell
-                    #     posix_shell(chan)
-                    # File "/home/ivan/dev/pysc/pysc/interactive.py", line 96, in posix_shell
-                    #     x = u(chan.recv(1024))
-                    # File "/home/ivan/.local/lib/python3.10/site-packages/paramiko/py3compat.py", line 161, in u
-                    #     return s.decode(encoding)
-                    # UnicodeDecodeError: 'utf-8' codec can't decode byte 0xd0 in position 0: unexpected end of data
-                    # TODO
-                    
+                    except UnicodeDecodeError as err:
+                        logger.debug(flatten_log_msg(err))
+
                     if len(x) == 0:
                         sys.stdout.write("\r\n*** EOF\r\n")
                         break
