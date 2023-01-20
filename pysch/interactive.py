@@ -17,14 +17,16 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA.
 
 
-from asyncio.log import logger
+# from asyncio.log import logger
 import socket
 import sys
 import fcntl
 import struct
+
 from paramiko.py3compat import u
 
 from .common import get_local_terminal_size, flatten_log_msg
+from .log_config import get_logger
 
 # windows does not have termios...
 try:
@@ -34,6 +36,8 @@ try:
     has_termios = True
 except ImportError:
     has_termios = False
+
+logger = get_logger(__name__)
 
 
 def interactive_shell(chan):

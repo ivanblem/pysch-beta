@@ -1,12 +1,13 @@
 import re
 import sys
+
 import paramiko
 from pykeepass import PyKeePass
 
+from .common import get_local_terminal_size, get_local_terminal_type
 from .interactive import interactive_shell
 from .inventory import Inventory
 from .log_config import get_logger
-from .common import get_local_terminal_size, get_local_terminal_type
 
 logger = get_logger(__name__)
 

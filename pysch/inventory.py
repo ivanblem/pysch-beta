@@ -1,14 +1,15 @@
-import sys
 import os
+import sys
 from typing import List
-from .log_config import get_logger
-from .common import flatten_log_msg
 
 from yaml import load as yaml_load
 try:
     from yaml import CLoader as YamlLoader
 except ImportError:
     from yaml import Loader as YamlLoader
+
+from .common import flatten_log_msg
+from .log_config import get_logger
 
 logger = get_logger(__name__)
 console_logger = get_logger('console_logger')

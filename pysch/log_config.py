@@ -1,9 +1,11 @@
 import logging
 import logging.config
-import yaml
 import sys
+import yaml
 
-log_format = f"%(asctime)s [%(levelname)s] %(name)s (%(filename)s).%(funcName)s(%(lineno)d) - %(message)s"
+log_format = "%(asctime)s [%(levelname)s] %(name)s " + \
+    "(%(filename)s).%(funcName)s(%(lineno)d) - %(message)s"
+
 
 def get_logger(name):
     try:

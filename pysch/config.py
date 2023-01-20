@@ -1,11 +1,7 @@
 import sys
 import os.path
-from .common import singlton_class, flatten_log_msg
 
 from yaml import load as yaml_load
-
-# from .inventory import Inventory
-from .log_config import get_logger
 
 try:
     # from yaml import CLoader as Loader, CDumper as Dumper
@@ -13,6 +9,10 @@ try:
 except ImportError:
     # from yaml import Loader, Dumper
     from yaml import Loader
+
+from .common import singlton_class, flatten_log_msg
+# from .inventory import Inventory
+from .log_config import get_logger
 
 console_logger = get_logger('console_logger')
 
