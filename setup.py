@@ -12,7 +12,7 @@ setup(
     packages=find_packages(),
     entry_points={
         'console_scripts': [
-            'pysch = pysch.pysc:cli',
+            'pysch = pysch.cli:cli',
         ],
     },
     install_requires=['paramiko', 'pykeepass', 'pyyaml', 'click'],
