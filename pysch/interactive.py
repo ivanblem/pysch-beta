@@ -17,16 +17,15 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA.
 
 
-# from asyncio.log import logger
-import socket
-import sys
 import fcntl
+import logging
+import socket
 import struct
+import sys
 
-from paramiko.py3compat import u
+# from paramiko.py3compat import u
 
-from .common import get_local_terminal_size, flatten_log_msg
-from .log_config import get_logger
+from .common import get_local_terminal_size
 
 # windows does not have termios...
 try:
@@ -37,12 +36,14 @@ try:
 except ImportError:
     has_termios = False
 
-logger = get_logger(__name__)
+# logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def interactive_shell(chan):
     if has_termios:
         posix_shell(chan)
+        logger.debug('Using posix shell')
     else:
         windows_shell(chan)
 
@@ -67,16 +68,22 @@ def posix_shell(chan):
             if chan in r:
                 try:
                     # x = u(chan.recv(1024))
-                    try:
-                        x = u(chan.recv(1024))
-                    except UnicodeDecodeError as err:
-                        logger.debug(flatten_log_msg(err))
+                    # try:
+                    #     # x = u(chan.recv(1024))
+                    #     x = chan.recv(1024)
+                    #     # TODO implement session logging here
+                    #     # logger.debug('Message recieved')
+                    #     # logger.debug(x)
+                    # except UnicodeDecodeError as err:
+                    #     logger.debug(flatten_log_msg(err))
+                    # TODO check and review the number (1024)
+                    x = chan.recv(1024)
 
                     if len(x) == 0:
-                        sys.stdout.write("\r\n*** EOF\r\n")
+                        sys.stdout.buffer.write(b"\r\n*** EOF\r\n")
                         break
-                    sys.stdout.write(x)
-                    sys.stdout.flush()
+                    sys.stdout.buffer.write(x)
+                    sys.stdout.buffer.flush()
                 except socket.timeout:
                     pass
             if sys.stdin in r:
