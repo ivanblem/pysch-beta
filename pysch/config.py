@@ -1,3 +1,4 @@
+import logging
 import sys
 import os.path
 
@@ -12,9 +13,8 @@ except ImportError:
 
 from .common import singlton_class, flatten_log_msg
 # from .inventory import Inventory
-from .log_config import get_logger
 
-console_logger = get_logger('console_logger')
+console_logger = logging.getLogger('console_logger')
 
 
 @singlton_class

@@ -1,3 +1,4 @@
+import logging
 import sys
 from typing import List
 
@@ -6,14 +7,18 @@ import paramiko
 from pykeepass import PyKeePass
 # from pykeepass.exceptions import CredentialsError
 
-from .common import get_local_terminal_size, get_local_terminal_type
+from .common import (
+    get_local_terminal_size,
+    get_local_terminal_type,
+    configure_logging
+)
 from .config import Config
 from .interactive import interactive_shell
 from .inventory import Inventory
-from .log_config import get_logger
 
 
-console_logger = get_logger('console_logger')
+console_logger = logging.getLogger('console_logger')
+logger = logging.getLogger(__name__)
 
 # TODO ~/.config/pysc/config.yaml
 DEFAULT_CONFIG_FILE = 'config.yaml'
@@ -28,6 +33,7 @@ DEFAULT_CONFIG_FILE = 'config.yaml'
 
 @click.group()
 def cli():
+    configure_logging()
     pass
 
 
@@ -52,7 +58,8 @@ def list_hosts():
 def list_credentials():
     click.echo('Available credentials:')
     PyscCLI().list_credentials()
-    
+
+
 class PyscCLI():
 
     def __init__(self, config_file=DEFAULT_CONFIG_FILE) -> None:
@@ -60,6 +67,8 @@ class PyscCLI():
 
         try:
             self._inventory = Inventory(self.config.inventory_file)
+            logger.debug('Loaded inventory from file ' +
+                         self.config.inventory_file)
         except AttributeError:
             console_logger.error('No inventory file provided!')
             sys.exit(1)
@@ -126,6 +135,8 @@ class PyscCLI():
 
         t = client.get_transport()
         channel = t.open_session()
+
+        # channel.set_environment_variable('LC_CTYPE', 'UTF-8')
 
         try:
             channel.get_pty(

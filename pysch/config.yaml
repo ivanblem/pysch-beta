@@ -1,6 +1,6 @@
-inventory_file: ../inventory.yaml
-keepass_db_file: ../pwd_db.kdbx
-keepass_key_file: ../pwddb.keyx
+inventory_file: inventory.yaml
+keepass_db_file: pwd_db.kdbx
+keepass_key_file: pwddb.keyx
 logging:
   version: 1
   formatters:
@@ -20,13 +20,18 @@ logging:
       class: logging.FileHandler
       level: DEBUG
       formatter: pysc_default
-      filename: pysc.log
+      filename: pysch.log
       
   loggers:
     console_logger:
       level: DEBUG
       handlers: [console]
-      propagate: no
+      propagate: yes
+    pysch:
+      level: DEBUG
+      handlers: [log_file]
+      propagate: yes
   root:
     level: DEBUG
     handlers: [log_file]
+  disable_existing_loggers: False

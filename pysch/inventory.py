@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 from typing import List
@@ -9,10 +10,9 @@ except ImportError:
     from yaml import Loader as YamlLoader
 
 from .common import flatten_log_msg
-from .log_config import get_logger
 
-logger = get_logger(__name__)
-console_logger = get_logger('console_logger')
+logger = logging.getLogger(__name__)
+console_logger = logging.getLogger('console_logger')
 
 
 class Inventory():

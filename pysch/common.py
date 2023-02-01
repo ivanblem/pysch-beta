@@ -1,6 +1,11 @@
 import functools
 import os
 
+import logging
+import logging.config
+import sys
+import yaml
+
 
 def get_local_terminal_size():
     """"""
@@ -31,3 +36,16 @@ def singlton_class(cls):
 
 def flat_inventory(inv):
     pass
+
+
+def configure_logging() -> None:
+
+    try:
+        with open('config.yaml', 'r') as f:
+            conf_dict = yaml.load(f, yaml.Loader)
+    except Exception as e:
+        # logger.error(fle)
+        print(e)
+        sys.exit(1)
+
+    logging.config.dictConfig(conf_dict['logging'])
