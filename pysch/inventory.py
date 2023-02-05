@@ -14,12 +14,14 @@ from .common import flatten_log_msg
 logger = logging.getLogger(__name__)
 console_logger = logging.getLogger('console_logger')
 
+HOST_REQUIRED_FIELDS = {'hostname', 'credentials'}
+
 
 class Inventory():
 
     def __init__(self, inventory_file) -> None:
         # inventory_path = os.path.abspath(inventory_file)
-        inventory_path = os.path.expanduser(inventory_file)
+        inventory_path = os.path.abspath(os.path.expanduser(inventory_file))
         # yaml.
         try:
             with open(inventory_path, 'r') as f:
@@ -36,8 +38,22 @@ class Inventory():
                 self.hosts.append(item)
             elif isinstance(self.inventory_dict[item], list):
                 self.groups.append(item)
+        # both host and group are dicts but
+        # there are only dicts inside group
+        # and there are no dicts inside host
+        # hosts must have all HOST_REQUIRED_FIELDS
+        # for node in self.inventory_dict:
+        #     if isinstance(self.inventory_dict[node], dict):
+        #         # for item in self.inventory_dict[node]:
+        #         if node_type == 'group':
+        #             pass
+        #         elif node_type == 'host':
+        #     else:
+        #         console_logger.error(
+        #             'Incorrect node type: {}.'.format(node))
+        #         sys.exit(1)
 
-        self._flat = self._flatten()
+        self._flat = self._flatten_v2()
 
     def _flatten(self) -> List:
         flattened_dict = []
@@ -51,6 +67,27 @@ class Inventory():
                     new_prefix += k+'/'
                     do_flat(d[k], prefix=new_prefix)
                     new_prefix = prefix
+            return flattened_dict
+
+    def _flatten_v2(self) -> dict:
+        flattened_dict = {}
+
+        def do_flat(d, prefix=''):
+            new_prefix = prefix
+            for k, v in d.items():
+                if isinstance(v, dict):
+                    if all(map(lambda i: type(i) == dict, v.values())):
+                        # node_type = 'group'
+                        new_prefix += k+'/'
+                        do_flat(d[k], prefix=new_prefix)
+                        new_prefix = prefix
+                    elif all(map(lambda i: type(i) != dict, v.values())):
+                        # node_type = 'host'
+                        flattened_dict[prefix+k] = v
+                else:
+                    console_logger.error(
+                        'Incorrect node type: {}.'.format(k))
+                    sys.exit(1)
             return flattened_dict
 
         return do_flat(self.inventory_dict)

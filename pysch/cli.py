@@ -14,7 +14,7 @@ from .common import (
 )
 from .config import Config
 from .interactive import interactive_shell
-from .inventory import Inventory
+from .inventory import Inventory, HOST_REQUIRED_FIELDS
 
 
 console_logger = logging.getLogger('console_logger')
@@ -102,25 +102,37 @@ class PyscCLI():
 
     def connect(self, target_host):
         self.target_host = target_host
-        if target_host in self.inventory.flat:
-            item_path = target_host.split('/')
-            # self.connection_config = self.inventory_dict[]
-            connection_config = self.inventory.inventory_dict[item_path[0]]
-            if len(item_path) > 1:
-                for item in item_path[1:]:
-                    connection_config = connection_config[item]
+        # if target_host in self.inventory.flat:
+        # item_path = target_host.split('/')
+        # self.connection_config = self.inventory_dict[]
+        # connection_config = self.inventory.inventory_dict[item_path[0]]
+        try:
+            connection_config = self.inventory.flat[target_host]
+        except KeyError:
+            configure_logging.error('{}: host not found'.format(target_host))
+            sys.exit(1)
+        if (HOST_REQUIRED_FIELDS & set(connection_config.keys()) !=
+                HOST_REQUIRED_FIELDS):
+            # missing fields:
+            # HOST_REQUIRED_FIELDS - (HOST_REQUIRED_FIELDS & set(v.keys()))
+            console_logger.error(
+                'Host "{}" doesnt have all required fields.'.format(
+                    target_host))
+            sys.exit(1)
 
-        if 'credentials' in connection_config.keys():
-            credentials = self.pwddb.find_entries_by_title(
-                connection_config['credentials'],
-                first=True
+        credentials = self.pwddb.find_entries_by_title(
+            connection_config['credentials'],
+            first=True
+        )
+        try:
+            connection_config['username'] = credentials.username
+            connection_config['password'] = credentials.password
+            connection_config.pop('credentials')
+        except AttributeError as e:
+            console_logger.error(str(e))
+            console_logger.error(
+                'Please check the credentials "{}" config'.format(credentials)
             )
-            try:
-                connection_config['username'] = credentials.username
-                connection_config['password'] = credentials.password
-                connection_config.pop('credentials')
-            except AttributeError as e:
-                console_logger.error(str(e))
 
         client = paramiko.SSHClient()
         client.load_system_host_keys()
