@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 from typing import List
 
@@ -21,7 +22,7 @@ console_logger = logging.getLogger('console_logger')
 logger = logging.getLogger(__name__)
 
 # TODO ~/.config/pysc/config.yaml
-DEFAULT_CONFIG_FILE = 'config.yaml'
+DEFAULT_CONFIG_FILE = os.path.abspath('config.yaml')
 
 # class CLICommand():
 
@@ -102,10 +103,6 @@ class PyscCLI():
 
     def connect(self, target_host):
         self.target_host = target_host
-        # if target_host in self.inventory.flat:
-        # item_path = target_host.split('/')
-        # self.connection_config = self.inventory_dict[]
-        # connection_config = self.inventory.inventory_dict[item_path[0]]
         try:
             connection_config = self.inventory.flat[target_host]
         except KeyError:
@@ -148,7 +145,9 @@ class PyscCLI():
         t = client.get_transport()
         channel = t.open_session()
 
-        # channel.set_environment_variable('LC_CTYPE', 'UTF-8')
+        for var_name, var_value in os.environ.items():
+            if var_name.startswith('LC_') or var_name == 'LANG':
+                channel.set_environment_variable(var_name, var_value)
 
         try:
             channel.get_pty(
