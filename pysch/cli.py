@@ -2,11 +2,19 @@ import logging
 import os
 import sys
 from typing import List
+from random import randbytes
+from hashlib import sha256
 
 import click
+from lxml import etree
 import paramiko
-from pykeepass import PyKeePass
+import pykeepass
 # from pykeepass.exceptions import CredentialsError
+from yaml import dump as yaml_dump
+try:
+    from yaml import CDumper as YamlDumper
+except ImportError:
+    from yaml import Dumper as YamlDumper
 
 from .common import (
     get_local_terminal_size,
@@ -22,7 +30,12 @@ console_logger = logging.getLogger('console_logger')
 logger = logging.getLogger(__name__)
 
 # TODO ~/.config/pysc/config.yaml
-DEFAULT_CONFIG_FILE = os.path.abspath('config.yaml')
+# DEFAULT_CONFIG_FILE = os.path.abspath('config.yaml')
+DEFAULT_CONFIG_DIR = os.path.expanduser('~/.config/pysch')
+DEFAULT_CONFIG_FILE = DEFAULT_CONFIG_DIR + '/config.yaml'
+DEFAULT_INVENTORY_FILE = DEFAULT_CONFIG_DIR + '/inventory.yaml'
+DEFAULT_PWDDB_FILE = DEFAULT_CONFIG_DIR + '/pwddb.kdbx'
+DEFAULT_PWDDB_KEY = DEFAULT_CONFIG_DIR + '/pwddb.keyx'
 
 # class CLICommand():
 
@@ -36,6 +49,78 @@ DEFAULT_CONFIG_FILE = os.path.abspath('config.yaml')
 def cli():
     configure_logging()
     pass
+
+
+@cli.command(help='Create initial config and inventoty')
+def init():
+    click.echo()
+    if not os.path.exists(DEFAULT_CONFIG_DIR):
+        os.makedirs(DEFAULT_CONFIG_DIR)
+    if os.path.exists(DEFAULT_CONFIG_FILE):
+        click.echo('File {} exists. Use --force ro override.'. format(
+            DEFAULT_CONFIG_FILE
+        ))
+    else:
+        with open(DEFAULT_CONFIG_FILE, 'w') as config_file:
+            yaml_dump(
+                {
+                    'inventory_file': DEFAULT_INVENTORY_FILE,
+                    'keepass_db_file': DEFAULT_PWDDB_FILE,
+                    'keepass_key_file': DEFAULT_PWDDB_KEY,
+                },
+                config_file,
+                YamlDumper
+            )
+
+        with open(DEFAULT_INVENTORY_FILE, 'w') as inventory_file:
+            yaml_dump(
+                {
+                    'localhost': {
+                        'hostname': '127.0.0.1',
+                        'credentials': 'my_credentials',
+                    },
+                    'my_group': {
+                        'my-host-1': {
+                            'hostname': '192.168.1.2',
+                            'credentials': 'my_password',
+                        },
+                        'my-host-2': {
+                            'hostname': 'server.local',
+                            'credentials': 'my_server_password',
+                        },
+                    },
+                },
+                inventory_file,
+                YamlDumper
+            )
+
+        key_bytes = randbytes(32)
+        key_hex = key_bytes.hex().upper()
+        key_hash = sha256(key_bytes).digest()[:4].hex().upper()
+        with open(DEFAULT_PWDDB_KEY, 'wb') as key_file:
+            xml_key = etree.XML('<KeyFile><Meta><Version>2.0</Version></Meta>\
+                <Key><Data Hash="{}">{}</Data></Key></KeyFile>'.format(
+                    key_hash,
+                    key_hex
+                )
+            )
+            etree.indent(xml_key)
+            xml_tree = etree.ElementTree(xml_key)
+            xml_tree.write(
+                key_file,
+                xml_declaration=True,
+                encoding='utf-8',
+                pretty_print=True
+            )
+
+        pykeepass.create_database(
+            DEFAULT_PWDDB_FILE,
+            keyfile=DEFAULT_PWDDB_KEY
+        )
+
+        click.echo('Default configuration has been saved at {}'.format(
+            DEFAULT_CONFIG_DIR
+        ))
 
 
 @cli.command(help='Connect to the host')
@@ -75,7 +160,7 @@ class PyscCLI():
             sys.exit(1)
 
         try:
-            self.pwddb = PyKeePass(
+            self.pwddb = pykeepass.PyKeePass(
                 self.config.keepass_db_file,
                 keyfile=self.config.keepass_key_file
             )
@@ -106,7 +191,7 @@ class PyscCLI():
         try:
             connection_config = self.inventory.flat[target_host]
         except KeyError:
-            configure_logging.error('{}: host not found'.format(target_host))
+            console_logger.error('{}: host not found'.format(target_host))
             sys.exit(1)
         if (HOST_REQUIRED_FIELDS & set(connection_config.keys()) !=
                 HOST_REQUIRED_FIELDS):
@@ -121,6 +206,13 @@ class PyscCLI():
             connection_config['credentials'],
             first=True
         )
+        if not credentials:
+            console_logger.error(
+                'Credentials "{}" not found'.format(
+                    connection_config['credentials']
+                )
+            )
+            sys.exit(1)
         try:
             connection_config['username'] = credentials.username
             connection_config['password'] = credentials.password
