@@ -19,7 +19,12 @@ except ImportError:
 from .common import (
     get_local_terminal_size,
     get_local_terminal_type,
-    configure_logging
+    configure_logging,
+    DEFAULT_CONFIG_DIR,
+    DEFAULT_CONFIG_FILE,
+    DEFAULT_INVENTORY_FILE,
+    DEFAULT_PWDDB_FILE,
+    DEFAULT_PWDDB_KEY
 )
 from .config import Config
 from .interactive import interactive_shell
@@ -29,25 +34,15 @@ from .inventory import Inventory, HOST_REQUIRED_FIELDS
 console_logger = logging.getLogger('console_logger')
 logger = logging.getLogger(__name__)
 
-# TODO ~/.config/pysc/config.yaml
-# DEFAULT_CONFIG_FILE = os.path.abspath('config.yaml')
-DEFAULT_CONFIG_DIR = os.path.expanduser('~/.config/pysch')
-DEFAULT_CONFIG_FILE = DEFAULT_CONFIG_DIR + '/config.yaml'
-DEFAULT_INVENTORY_FILE = DEFAULT_CONFIG_DIR + '/inventory.yaml'
-DEFAULT_PWDDB_FILE = DEFAULT_CONFIG_DIR + '/pwddb.kdbx'
-DEFAULT_PWDDB_KEY = DEFAULT_CONFIG_DIR + '/pwddb.keyx'
-
-# class CLICommand():
-
-#     def __init__(self) -> None:
-#         pass
-#     def run(self):
-#         pass
-
 
 @click.group()
-def cli():
-    configure_logging()
+@click.option('--loglevel', '-l',
+              type=click.Choice(
+                  ['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'],
+                  case_sensitive=False),
+              default='ERROR')
+def cli(loglevel):
+    configure_logging(loglevel)
     pass
 
 
