@@ -105,8 +105,9 @@ def configure_logging(loglevel) -> None:
         for logger in logging_config['loggers']:
             logging_config['loggers'][logger]['level'] = loglevel
         logging_config['root']['level'] = loglevel
-    except Exception:
-        print('Cannot set logging level. Plese check the configuration.')
+    except KeyError:
+        print('Cannot set logging level.',
+              'Plese check the loggers configuration.')
         sys.exit(1)
 
     logging.config.dictConfig(logging_config)
