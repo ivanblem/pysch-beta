@@ -28,7 +28,7 @@ from .common import (
 )
 from .config import Config
 from .interactive import interactive_shell
-from .inventory import Inventory, HOST_REQUIRED_FIELDS
+from .inventory import Inventory
 
 
 console_logger = logging.getLogger('console_logger')
@@ -174,7 +174,7 @@ class PyscCLI():
         return self._inventory
 
     def list_hosts(self) -> List:
-        for host in self.inventory.flat:
+        for host in self.inventory._flat:
             print(host)
 
     def list_credentials(self) -> List:
@@ -183,18 +183,8 @@ class PyscCLI():
 
     def connect(self, target_host):
         self.target_host = target_host
-        try:
-            connection_config = self.inventory.flat[target_host]
-        except KeyError:
-            console_logger.error('{}: host not found'.format(target_host))
-            sys.exit(1)
-        if (HOST_REQUIRED_FIELDS & set(connection_config.keys()) !=
-                HOST_REQUIRED_FIELDS):
-            # missing fields:
-            # HOST_REQUIRED_FIELDS - (HOST_REQUIRED_FIELDS & set(v.keys()))
-            console_logger.error(
-                'Host "{}" doesnt have all required fields.'.format(
-                    target_host))
+        connection_config = self.inventory.get_host(self.target_host)
+        if not connection_config:
             sys.exit(1)
 
         credentials = self.pwddb.find_entries_by_title(
@@ -217,9 +207,12 @@ class PyscCLI():
             console_logger.error(
                 'Please check the credentials "{}" config'.format(credentials)
             )
+            sys.exit(1)
 
         client = paramiko.SSHClient()
         client.load_system_host_keys()
+        # logger.debug('Host keys:')
+        # logger.debug(client._system_host_keys.keys())
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy)
         # logger.info('connecting to '+self.config['hostname'])
         # logger.info('connecting to '+self.config['hostname'])

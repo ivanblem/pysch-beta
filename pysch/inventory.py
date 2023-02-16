@@ -92,6 +92,26 @@ class Inventory():
 
         return do_flat(self.inventory_dict)
 
-    @property
-    def flat(self):
-        return self._flat
+    def get_host(self, hostname: str) -> dict:
+        host_config = self._flat.get(hostname, None)
+        console_logger.debug('Got "{}" config: {}'.format(
+            hostname,
+            host_config)
+        )
+        if host_config:
+            if (HOST_REQUIRED_FIELDS & set(host_config.keys()) !=
+                    HOST_REQUIRED_FIELDS):
+                missing_fields = (HOST_REQUIRED_FIELDS - (
+                    HOST_REQUIRED_FIELDS & set(host_config.keys())
+                ))
+                console_logger.error(
+                    'Host "{}" config is missing required fields {}'.format(
+                        hostname, missing_fields
+                    )
+                )
+                host_config = None
+        else:
+            console_logger.error(
+                'Host "{}" not found!'.format(hostname)
+            )
+        return host_config
