@@ -174,7 +174,7 @@ class PyscCLI():
         return self._inventory
 
     def list_hosts(self) -> List:
-        for host in self.inventory._flat:
+        for host in self.inventory:
             print(host)
 
     def list_credentials(self) -> List:
