@@ -1,13 +1,10 @@
 import logging
 import os
-import sys
-from typing import List
 from random import randbytes
 from hashlib import sha256
 
 import click
 from lxml import etree
-import paramiko
 import pykeepass
 # from pykeepass.exceptions import CredentialsError
 from yaml import dump as yaml_dump
@@ -17,8 +14,6 @@ except ImportError:
     from yaml import Dumper as YamlDumper
 
 from .common import (
-    get_local_terminal_size,
-    get_local_terminal_type,
     configure_logging,
     DEFAULT_CONFIG_DIR,
     DEFAULT_CONFIG_FILE,
@@ -26,24 +21,31 @@ from .common import (
     DEFAULT_PWDDB_FILE,
     DEFAULT_PWDDB_KEY
 )
-from .config import Config
-from .interactive import interactive_shell
-from .inventory import Inventory
 
+from .pysch_cli import PyscCLI
 
 console_logger = logging.getLogger('console_logger')
 logger = logging.getLogger(__name__)
 
 
 @click.group()
-@click.option('--loglevel', '-l',
-              type=click.Choice(
-                  ['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'],
-                  case_sensitive=False),
-              default='ERROR')
-def cli(loglevel):
+@click.option(
+    '--config', '-c',
+    help='Path to configuration file',
+    type=click.Path(exists=True),
+    default=DEFAULT_CONFIG_FILE)
+@click.option(
+    '--loglevel', '-l',
+    type=click.Choice(
+        ['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'],
+        case_sensitive=False),
+    default='ERROR')
+@click.pass_context
+def cli(ctx, loglevel, config):
     configure_logging(loglevel)
-    pass
+    cfg = os.path.abspath(os.path.expanduser(config))
+    console_logger.debug('Using config file: {}'.format(cfg))
+    ctx.obj = PyscCLI(config_file=cfg)
 
 
 @cli.command(help='Create initial config and inventoty')
@@ -52,7 +54,7 @@ def init():
     if not os.path.exists(DEFAULT_CONFIG_DIR):
         os.makedirs(DEFAULT_CONFIG_DIR)
     if os.path.exists(DEFAULT_CONFIG_FILE):
-        click.echo('File {} exists. Use --force ro override.'. format(
+        click.echo('File {} exists. Use --force to override.'. format(
             DEFAULT_CONFIG_FILE
         ))
     else:
@@ -120,123 +122,21 @@ def init():
 
 @cli.command(help='Connect to the host')
 @click.argument('host')
-def connect(host):
-    click.echo('Connecting to the {}'.format(host))
-    PyscCLI().connect(host)
-    # pysc_cli = PyscCLI()
-    # pysc_cli.connect(host)
+@click.pass_obj
+def connect(pysc_cli, host):
+    click.echo('Connecting to {}'.format(host))
+    pysc_cli.connect(host)
 
 
 @cli.command(help='Get list of hosts')
-def list_hosts():
+@click.pass_obj
+def list_hosts(pysc_cli):
     click.echo('Available hosts:')
-    PyscCLI().list_hosts()
-    # pysc_cli = PyscCLI()
-    # pysc_cli.list_hosts()
+    pysc_cli.list_hosts()
 
 
 @cli.command(help='Get list of credendials')
-def list_credentials():
+@click.pass_obj
+def list_credentials(pysc_cli):
     click.echo('Available credentials:')
-    PyscCLI().list_credentials()
-
-
-class PyscCLI():
-
-    def __init__(self, config_file=DEFAULT_CONFIG_FILE) -> None:
-        self.config = Config(config_file)
-
-        try:
-            self._inventory = Inventory(self.config.inventory_file)
-            logger.debug('Loaded inventory from file ' +
-                         self.config.inventory_file)
-        except AttributeError:
-            console_logger.error('No inventory file provided!')
-            sys.exit(1)
-
-        try:
-            self.pwddb = pykeepass.PyKeePass(
-                self.config.keepass_db_file,
-                keyfile=self.config.keepass_key_file
-            )
-        except FileNotFoundError as e:
-            console_logger.error(str(e))
-            # logger.exception(e)
-            sys.exit(1)
-        # except CredentialsError as e:
-        #     console_logger.error(str(e)
-        #     sys.exit(1)
-
-    @property
-    def inventory(self):
-        if not hasattr(self, '_inventory'):
-            self._inventory = Inventory(self.inventory_file)
-        return self._inventory
-
-    def list_hosts(self) -> List:
-        for host in self.inventory:
-            print(host)
-
-    def list_credentials(self) -> List:
-        for entry in self.pwddb.entries:
-            print(entry)
-
-    def connect(self, target_host):
-        self.target_host = target_host
-        connection_config = self.inventory.get_host(self.target_host)
-        if not connection_config:
-            sys.exit(1)
-
-        credentials = self.pwddb.find_entries_by_title(
-            connection_config['credentials'],
-            first=True
-        )
-        if not credentials:
-            console_logger.error(
-                'Credentials "{}" not found'.format(
-                    connection_config['credentials']
-                )
-            )
-            sys.exit(1)
-        try:
-            connection_config['username'] = credentials.username
-            connection_config['password'] = credentials.password
-            connection_config.pop('credentials')
-        except AttributeError as e:
-            console_logger.error(str(e))
-            console_logger.error(
-                'Please check the credentials "{}" config'.format(credentials)
-            )
-            sys.exit(1)
-
-        client = paramiko.SSHClient()
-        client.load_system_host_keys()
-        # logger.debug('Host keys:')
-        # logger.debug(client._system_host_keys.keys())
-        client.set_missing_host_key_policy(paramiko.AutoAddPolicy)
-        # logger.info('connecting to '+self.config['hostname'])
-        # logger.info('connecting to '+self.config['hostname'])
-        # TODO: deal with BadHostKeyException
-        # better to check it in advance even
-        # client.load_system_host_keys
-        # paramiko.HostKeys
-        client.connect(**connection_config)
-
-        t = client.get_transport()
-        channel = t.open_session()
-
-        for var_name, var_value in os.environ.items():
-            if var_name.startswith('LC_') or var_name == 'LANG':
-                channel.set_environment_variable(var_name, var_value)
-
-        try:
-            channel.get_pty(
-                get_local_terminal_type(),
-                *get_local_terminal_size()
-            )
-            channel.invoke_shell()
-        except Exception as err:
-            console_logger.error(str(err))
-            sys.exit(1)
-
-        interactive_shell(channel)
+    pysc_cli.list_credentials()
