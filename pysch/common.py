@@ -87,19 +87,24 @@ def flat_inventory(inv):
     pass
 
 
-def configure_logging(loglevel) -> None:
+def configure_logging(loglevel, config_file=DEFAULT_CONFIG_FILE) -> None:
+
+    logger = logging.getLogger(__name__)
 
     try:
         with open(DEFAULT_CONFIG_FILE, 'r') as f:
             conf_dict = yaml.load(f, yaml.Loader)
-    except Exception as e:
-        print(e)
-        sys.exit(1)
-
-    try:
-        logging_config = conf_dict['logging']
-    except KeyError:
+    except FileNotFoundError:
+        logger.error('File {} not found. Using default logging config...'.format(
+            config_file)
+        )
         logging_config = DEFAULT_LOGGING_CONFIG
+    else:
+        try:
+            logging_config = conf_dict['logging']
+        except KeyError:
+            # logger.error('No logging configuration in config. Using default...')
+            logging_config = DEFAULT_LOGGING_CONFIG
 
     try:
         for logger in logging_config['loggers']:
