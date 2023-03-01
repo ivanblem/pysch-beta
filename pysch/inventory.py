@@ -9,8 +9,6 @@ try:
 except ImportError:
     from yaml import Loader as YamlLoader
 
-from .common import flatten_log_msg
-
 logger = logging.getLogger(__name__)
 console_logger = logging.getLogger('console_logger')
 
@@ -26,9 +24,8 @@ class Inventory():
         try:
             with open(inventory_path, 'r') as f:
                 self.inventory_dict = yaml_load(f, YamlLoader)
-        except Exception as e:
-            console_logger.error(flatten_log_msg(e))
-            console_logger.error('Exiting')
+        except FileNotFoundError:
+            console_logger.error('Inventory file not found. Exiting')
             sys.exit(1)
 
         # self.hosts = []

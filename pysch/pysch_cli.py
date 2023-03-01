@@ -83,7 +83,7 @@ class PyscCLI():
         except AttributeError as e:
             console_logger.error(str(e))
             console_logger.error(
-                'Please check the credentials "{}" config'.format(credentials)
+                'Please check credentials "{}"'.format(credentials)
             )
             sys.exit(1)
 
@@ -113,8 +113,9 @@ class PyscCLI():
                 *get_local_terminal_size()
             )
             channel.invoke_shell()
-        except Exception as err:
-            console_logger.error(str(err))
+        except paramiko.SSHException as e:
+            console_logger.error(str(e))
+            console_logger.error('Failed to request pty and interactve shell')
             sys.exit(1)
 
         interactive_shell(channel)

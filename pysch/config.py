@@ -11,7 +11,7 @@ except ImportError:
     # from yaml import Loader, Dumper
     from yaml import Loader
 
-from .common import singlton_class, flatten_log_msg
+from .common import singlton_class
 # from .inventory import Inventory
 
 console_logger = logging.getLogger('console_logger')
@@ -25,9 +25,8 @@ class Config():
         try:
             with open(filename, 'r') as f:
                 self.conf_dict = yaml_load(f, Loader)
-        except Exception as e:
-            console_logger.error(flatten_log_msg(e))
-            console_logger.error('Exiting')
+        except FileNotFoundError:
+            console_logger.error('Config file not found. Exiting.')
             sys.exit(1)
 
         for fname in (
