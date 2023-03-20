@@ -20,22 +20,16 @@
 import fcntl
 import logging
 import re
+import select
 import socket
 import struct
 import sys
+import termios
+import tty
 
 # from paramiko.py3compat import u
 
 from .common import get_local_terminal_size
-
-# windows does not have termios...
-try:
-    import termios
-    import tty
-
-    has_termios = True
-except ImportError:
-    has_termios = False
 
 # logger = get_logger(__name__)
 logger = logging.getLogger(__name__)
@@ -65,15 +59,6 @@ class SessionLogger():
 
 
 def interactive_shell(chan, session_log_fname):
-    if has_termios:
-        posix_shell(chan, session_log_fname)
-        logger.debug('Using posix shell')
-    else:
-        windows_shell(chan)
-
-
-def posix_shell(chan, session_log_fname):
-    import select
 
     oldtty = termios.tcgetattr(sys.stdin)
     try:
@@ -127,35 +112,3 @@ def posix_shell(chan, session_log_fname):
 
     finally:
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, oldtty)
-
-
-# thanks to Mike Looijmans for this code
-def windows_shell(chan):
-    import threading
-
-    sys.stdout.write(
-        "Line-buffered terminal emulation. Press F6 or ^Z to send EOF.\r\n\r\n"
-    )
-
-    def writeall(sock):
-        while True:
-            data = sock.recv(256)
-            if not data:
-                sys.stdout.write("\r\n*** EOF ***\r\n\r\n")
-                sys.stdout.flush()
-                break
-            sys.stdout.write(data)
-            sys.stdout.flush()
-
-    writer = threading.Thread(target=writeall, args=(chan,))
-    writer.start()
-
-    try:
-        while True:
-            d = sys.stdin.read(1)
-            if not d:
-                break
-            chan.send(d)
-    except EOFError:
-        # user hit ^Z or F6
-        pass
