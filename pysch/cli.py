@@ -152,10 +152,18 @@ def init(force):
 
 @cli.command(help='Connect to the host')
 @click.argument('host')
+@click.option(
+    '--session-log',
+    help='Session log file location',
+    type=click.Path(exists=False))
 @click.pass_context
-def connect(ctx, host):
+def connect(ctx, host, session_log):
     click.echo('Connecting to {}'.format(host))
-    PyscCLI(config_file=ctx.obj['CONFIG']).connect(host)
+    if session_log:
+        session_log = os.path.abspath(session_log)
+    PyscCLI(config_file=ctx.obj['CONFIG']).connect(
+        host,
+        session_log=session_log)
 
 
 @cli.command(help='Get list of hosts')

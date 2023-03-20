@@ -19,6 +19,7 @@
 
 import fcntl
 import logging
+import re
 import socket
 import struct
 import sys
@@ -40,15 +41,38 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-def interactive_shell(chan):
+class SessionLogger():
+
+    csi_escape_seq = re.compile(br'\x1b\[(?:[0-?]+)?(?:[ -\/]+)?[@-~]?')
+    # backspace_escape = re.compile(br'\w\x08')
+    backspace_escape = re.compile(br'\n(.*\r\r)(?!\n)')
+    car_return_escape = re.compile(br'\s+\r')
+
+    def __init__(self, filename) -> None:
+        self._buffer = bytearray()
+        self.filename = filename
+        pass
+
+    def write(self, some_bytes, force=False):
+        self._buffer.extend(some_bytes)
+        if (len(self._buffer) >= 1024) or force:
+            with open(self.filename, 'ab') as f:
+                self._buffer = self.csi_escape_seq.sub(b'', self._buffer)
+                self._buffer = self.backspace_escape.sub(b'\n', self._buffer)
+                self._buffer = self.car_return_escape.sub(b'', self._buffer)
+                f.write(self._buffer)
+                self._buffer = bytearray()
+
+
+def interactive_shell(chan, session_log_fname):
     if has_termios:
-        posix_shell(chan)
+        posix_shell(chan, session_log_fname)
         logger.debug('Using posix shell')
     else:
         windows_shell(chan)
 
 
-def posix_shell(chan):
+def posix_shell(chan, session_log_fname):
     import select
 
     oldtty = termios.tcgetattr(sys.stdin)
@@ -56,6 +80,9 @@ def posix_shell(chan):
         tty.setraw(sys.stdin.fileno())
         tty.setcbreak(sys.stdin.fileno())
         chan.settimeout(0.0)
+
+        if session_log_fname:
+            session_logger = SessionLogger(session_log_fname)
 
         while True:
             if not chan.closed:
@@ -81,14 +108,20 @@ def posix_shell(chan):
 
                     if len(x) == 0:
                         sys.stdout.buffer.write(b"\r\n*** EOF\r\n")
+                        if session_log_fname:
+                            session_logger.write(x, force=True)
                         break
                     sys.stdout.buffer.write(x)
+                    if session_log_fname:
+                        session_logger.write(x)
                     sys.stdout.buffer.flush()
                 except socket.timeout:
                     pass
             if sys.stdin in r:
                 x = sys.stdin.read(doublewat)
                 if len(x) == 0:
+                    if session_log_fname:
+                        session_logger.write(b'', force=True)
                     break
                 chan.send(x)
 

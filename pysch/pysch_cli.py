@@ -59,7 +59,7 @@ class PyscCLI():
         for entry in self.pwddb.entries:
             print(entry)
 
-    def connect(self, target_host):
+    def connect(self, target_host, session_log=None):
         self.target_host = target_host
         connection_config = self.inventory.get_host(self.target_host)
         if not connection_config:
@@ -118,4 +118,4 @@ class PyscCLI():
             console_logger.error('Failed to request pty and interactve shell')
             sys.exit(1)
 
-        interactive_shell(channel)
+        interactive_shell(channel, session_log)
