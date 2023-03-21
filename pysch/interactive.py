@@ -27,11 +27,9 @@ import sys
 import termios
 import tty
 
-# from paramiko.py3compat import u
 
 from .common import get_local_terminal_size
 
-# logger = get_logger(__name__)
 logger = logging.getLogger(__name__)
 
 
@@ -79,16 +77,7 @@ def interactive_shell(chan, session_log_fname):
             doublewat = struct.unpack('h', wat)[0]
             if chan in r:
                 try:
-                    # x = u(chan.recv(1024))
-                    # try:
-                    #     # x = u(chan.recv(1024))
-                    #     x = chan.recv(1024)
-                    #     # TODO implement session logging here
-                    #     # logger.debug('Message recieved')
-                    #     # logger.debug(x)
-                    # except UnicodeDecodeError as err:
-                    #     logger.debug(flatten_log_msg(err))
-                    # TODO check and review the number (1024)
+
                     x = chan.recv(1024)
 
                     if len(x) == 0:

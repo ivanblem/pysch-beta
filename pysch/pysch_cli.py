@@ -39,7 +39,6 @@ class PyscCLI():
             )
         except FileNotFoundError as e:
             console_logger.error(str(e))
-            # logger.exception(e)
             sys.exit(1)
         # except CredentialsError as e:
         #     console_logger.error(str(e)

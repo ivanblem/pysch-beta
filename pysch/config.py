@@ -5,14 +5,11 @@ import os.path
 from yaml import load as yaml_load
 
 try:
-    # from yaml import CLoader as Loader, CDumper as Dumper
     from yaml import CLoader as Loader
 except ImportError:
-    # from yaml import Loader, Dumper
     from yaml import Loader
 
 from .common import singlton_class
-# from .inventory import Inventory
 
 console_logger = logging.getLogger('console_logger')
 
@@ -53,12 +50,6 @@ class Config():
                     'File {} not found. Exiting'.format(fname)
                 )
                 sys.exit(1)
-
-    # @property
-    # def inventory(self):
-    #     if not hasattr(self, '_inventory'):
-    #         self._inventory = Inventory(self.inventory_file)
-    #     return self._inventory
 
     def get_node_config(self, node_name) -> dict:
         pass

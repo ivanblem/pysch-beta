@@ -28,29 +28,6 @@ class Inventory():
             console_logger.error('Inventory file not found. Exiting')
             sys.exit(1)
 
-        # self.hosts = []
-        # self.groups = []
-        # for item in self.inventory_dict:
-        #     if isinstance(self.inventory_dict[item], dict):
-        #         self.hosts.append(item)
-        #     elif isinstance(self.inventory_dict[item], list):
-        #         self.groups.append(item)
-
-        # both host and group are dicts but
-        # there are only dicts inside group
-        # and there are no dicts inside host
-        # hosts must have all HOST_REQUIRED_FIELDS
-        # for node in self.inventory_dict:
-        #     if isinstance(self.inventory_dict[node], dict):
-        #         # for item in self.inventory_dict[node]:
-        #         if node_type == 'group':
-        #             pass
-        #         elif node_type == 'host':
-        #     else:
-        #         console_logger.error(
-        #             'Incorrect node type: {}.'.format(node))
-        #         sys.exit(1)
-
         self._flat = self._flatten_v2()
 
     def __len__(self):
