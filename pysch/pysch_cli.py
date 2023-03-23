@@ -1,5 +1,6 @@
 import logging
 import os
+import socket
 import sys
 from typing import List
 
@@ -97,7 +98,13 @@ class PyscCLI():
         # better to check it in advance even
         # client.load_system_host_keys
         # paramiko.HostKeys
-        client.connect(**connection_config)
+        try:
+            client.connect(**connection_config)
+        except socket.error:
+            console_logger.error('Cannot connect to host "{}"'.format(
+                connection_config['hostname']
+            ))
+            sys.exit(1)
 
         t = client.get_transport()
         channel = t.open_session()
