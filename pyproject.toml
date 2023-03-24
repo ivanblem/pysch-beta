@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pysch"
+version = "0.1.0"
+authors = [
+  { name="Ivan Blem", email="ivanblem@gmail.com" },
+]
+description = "Python SSH Connection Helper"
+readme = "README.md"
+license = {text = "LGPL-2.1-only"}
+requires-python = ">=3.7"
+dependencies = [
+    "paramiko",
+    "pykeepass",
+    "pyyaml",
+    "click",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU Lesser General Public License v2 (LGPLv2)",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: POSIX :: Linux",
+    "Topic :: Internet",
+    "Topic :: Security :: Cryptography",
+    "Topic :: Utilities",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/ivanblem/pysch-beta"
+"Bug Tracker" = "https://github.com/ivanblem/pysch-beta/issues"
+
+[project.scripts]
+pysch = "pysch.cli:cli"
