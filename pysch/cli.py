@@ -195,7 +195,15 @@ def add_credentials(ctx, title, username, password):
         cfg.keepass_db_file,
         keyfile=cfg.keepass_key_file
     )
-    pwddb.add_entry(pwddb.root_group, title, username, password)
+    try:
+        pwddb.add_entry(pwddb.root_group, title, username, password)
+    except Exception as e:
+        if 'already exists' in str(e):
+            console_logger.error(
+                'Entry "{}" already exists in the root group'.format(title))
+            sys.exit(1)
+        else:
+            raise e
     pwddb.save()
     click.echo('"{}" entry has been added to the keepass db'.format(
         title))
