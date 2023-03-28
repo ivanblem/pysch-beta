@@ -65,8 +65,8 @@ class PyscCLI():
         if not connection_config:
             sys.exit(1)
 
-        credentials = self.pwddb.find_entries_by_title(
-            connection_config['credentials'],
+        credentials = self.pwddb.find_entries(
+            title=connection_config['credentials'],
             first=True
         )
         if not credentials:
