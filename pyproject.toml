@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pysch"
-version = "0.1.0"
+version = "0.1.1"
 authors = [
   { name="Ivan Blem", email="ivanblem@gmail.com" },
 ]
 description = "Python SSH Connection Helper"
 readme = "README.md"
 license = {text = "LGPL-2.1-only"}
-requires-python = ">=3.7"
+requires-python = ">=3.9"
 dependencies = [
     "paramiko",
     "pykeepass",
