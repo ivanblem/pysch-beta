@@ -1,0 +1,5 @@
+click==8.1.3
+lxml==4.9.2
+paramiko==3.1.0
+pykeepass==4.0.3
+PyYAML==6.0
